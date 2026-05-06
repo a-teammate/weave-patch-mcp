@@ -35,12 +35,28 @@ read src/lib.rs symbols=Server,handle_request language=rust
 === end
 ```
 
+Read with glob patterns (token-efficient exploration):
+
+```text
+=== begin
+read src/**/*.rs
+=== end
+```
+
 Write a file (create or overwrite):
 
 ```text
 === begin
 write src/hello.rs
 +pub fn hello() { println!("Hello!"); }
+=== end
+```
+
+Create an empty file:
+
+```text
+=== begin
+create src/empty_module.rs
 === end
 ```
 
@@ -78,7 +94,7 @@ move src/old.rs src/new.rs
 === end
 ```
 
-Combined operations:
+Combined operations (executes in authored order, commits atomically):
 
 ```text
 === begin
@@ -98,22 +114,30 @@ delete src/deprecated.rs
 PATCH BODY OPTIONS:
   view|read <path> [symbols=a,b] [language=rust] [offset=N] [limit=N] [start=N] [end=N]
   map <path> [depth=N] [limit=N]
-  create <path>   content lines (create only; raw text or all + lines)
+  create <path>   content lines (create only; raw text or all + lines). No lines creates an empty file.
   write <path>    content lines (create or overwrite; raw text or all + lines)
-  update <path>   @@ hint (optional)   context/ -/ + lines
+  update <path>   @@ hint (optional, NOT a line number)   context/ -/ + lines
   delete <path>
   move <from> <to>
-  move_to <path>  (inside Update)
+  move_to <path>  (inside Update for atomic rename+edit)
 
 TOOL PARAMETERS:
   - dry_run=true previews the batch without committing filesystem changes
   - response_format=json returns a machine-readable JSON payload in the tool text response
+  - threshold=0.80 lowers fuzzy matching strictness if a recoverable_error reports high similarity
 
 DEFAULTS:
   - Fuzzy matching threshold: 0.95
   - Map depth: 3, output limit: 6000 chars
   - File read truncation: 1000 lines unless symbols/limit/start-end specified
 
+AGENT TIPS & EDGE CASES:
+  - @@ labels are context hints, NOT line numbers.
+  - Markdown pipe tables: rows starting with `|` are context lines. Use `-|` and `+|` to replace them.
+  - Robustness: Handles CRLF/LF automatically (never manually escape `\r\n`). Supports raw UTF-8/Unicode (do not escape non-ASCII chars).
+  - Error recovery: `recoverable_error` includes top-3 closest matches with similarity %.
+
 SECURITY: No symlinks. Relative paths (including ../), absolute paths, and ~ home expansion are allowed.
 
 VALIDATORS (advisory): rustfmt, py_compile, gofmt, json.tool, bash -n, node --check, terraform fmt
+

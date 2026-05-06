@@ -20,12 +20,12 @@ use crate::{parser, reader, tool_contract};
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct BatchExecParams {
     #[schemars(
-        description = "Compact patch text containing view/read, map, create, write, update, move, and delete operations. Use weave syntax wrapped in === begin / === end, or paste native apply_patch-style *** Begin Patch blocks."
+        description = "Patch text containing view/read, map, create, write, update, move, and delete operations. Wrap in === begin / === end. Supports batching multiple operations in one call, glob patterns (e.g., read src/**/*.rs), and creating empty files (use 'create <path>' with no following lines). Native *** Begin Patch blocks are also accepted directly."
     )]
     pub patch: String,
 
     #[schemars(
-        description = "Optional fuzzy matching threshold (0.0-1.0). Higher values (e.g., 0.97) require stricter matching. Default: 0.95."
+        description = "Optional fuzzy matching threshold (0.0-1.0). Higher values (e.g., 0.97) require stricter matching. Default: 0.95. If an update fails with a recoverable_error but reports high similarity (e.g., 80-94%), retry with a lower threshold (e.g., 0.80) instead of re-reading the file."
     )]
     pub threshold: Option<f32>,
 
